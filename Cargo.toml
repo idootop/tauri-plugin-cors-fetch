@@ -10,7 +10,6 @@ license = "MIT"
 readme = "README.md"
 edition = "2021"
 rust-version = "1.70"
-exclude = ["/examples", "/node_modules"]
 links = "tauri-plugin-cors-fetch"
 
 [dependencies]
