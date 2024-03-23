@@ -6,6 +6,7 @@ keywords = ["tauri", "CORS", "fetch"]
 authors = [ "Del Wang <hello@xbox.work>" ]
 repository = "https://github.com/idootop/tauri-plugin-cors-fetch"
 documentation = "https://docs.rs/tauri-plugin-cors-fetch"
+license = "MIT"
 readme = "README.md"
 edition = "2021"
 rust-version = "1.70"
