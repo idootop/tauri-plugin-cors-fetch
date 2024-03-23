@@ -22,7 +22,7 @@ When developing cross-platform desktop applications with [Tauri](https://tauri.a
 
 Add the plugin to your Tauri project's dependencies:
 
-```toml
+```shell
 cargo add tauri-plugin-cors-fetch
 ```
 
