@@ -1,4 +1,4 @@
-![plugin-window-state](https://github.com/idootop/tauri-plugin-cors-fetch/banner.png)
+![tauri-plugin-cors-fetch](https://github.com/idootop/tauri-plugin-cors-fetch/blob/main/banner.png)
 
 An **unofficial** Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications.
 
