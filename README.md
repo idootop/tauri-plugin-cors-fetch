@@ -25,7 +25,7 @@ Add the plugin to your Tauri project's dependencies:
 ```toml
 # Cargo.toml
 [dependencies]
-tauri-cors-fetch-hook = "1.0.0"
+tauri-plugin-cors-fetch = "1.0.0"
 ```
 
 Then, initialize the plugin in your Tauri application setup:
