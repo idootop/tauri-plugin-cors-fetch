@@ -23,9 +23,7 @@ When developing cross-platform desktop applications with [Tauri](https://tauri.a
 Add the plugin to your Tauri project's dependencies:
 
 ```toml
-# Cargo.toml
-[dependencies]
-tauri-plugin-cors-fetch = "1.0.0"
+cargo add tauri-plugin-cors-fetch
 ```
 
 Then, initialize the plugin in your Tauri application setup:
