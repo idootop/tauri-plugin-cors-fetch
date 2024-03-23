@@ -30,7 +30,7 @@ Then, initialize the plugin in your Tauri application setup:
 // main.rs
 fn main() {
     tauri::Builder::default()
-        .plugin(tauri_cors_fetch_hook::init())
+        .plugin(tauri_plugin_cors_fetch::init())
         .run(tauri::generate_context!())
         .expect("failed to run app");
 }
