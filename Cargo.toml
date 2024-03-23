@@ -2,7 +2,7 @@
 name = "tauri-plugin-cors-fetch"
 version = "1.0.0"
 authors = [ "hello@xbox.work" ]
-description = ""
+description = "A Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications."
 edition = "2021"
 rust-version = "1.70"
 exclude = ["/examples", "/node_modules"]
