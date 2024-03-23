@@ -1,18 +1,22 @@
 ![tauri-plugin-cors-fetch](https://github.com/idootop/tauri-plugin-cors-fetch/blob/main/banner.png)
 
+[![crates.io](https://img.shields.io/crates/v/tauri-plugin-cors-fetch.svg)](https://crates.io/crates/tauri-plugin-cors-fetch)
+[![Documentation](https://docs.rs/tauri-plugin-cors-fetch/badge.svg)](https://docs.rs/tauri-plugin-cors-fetch)
+[![MIT licensed](https://img.shields.io/crates/l/tauri-plugin-cors-fetch.svg)](./LICENSE)
+
 An **unofficial** Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications.
-
-**Features**
-
-- **CORS Bypass**: Automatically handles CORS restrictions for `fetch` requests.
-- **Seamless Integration**: Use the standard `fetch` API without modifications.
-- **Flexible Configuration**: Enable CORS globally or on a per-request basis.
 
 ## Overview
 
 When developing cross-platform desktop applications with [Tauri](https://tauri.app), you may encounter CORS restrictions that prevent direct access to certain web resources, such as [OpenAI](https://openai.com/product) services. While the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http/latest) can achieve CORS bypassing, it requires adapting your network requests and may not be compatible with third-party dependencies.
 
 `tauri-plugin-cors-fetch` provides a transparent solution by automatically intercepting and modifying outgoing `fetch` requests, adding the necessary headers to bypass CORS restrictions. This allows you to continue using the standard `fetch` API without the need for additional code changes or workarounds.
+
+**Features**
+
+- **CORS Bypass**: Automatically handles CORS restrictions for `fetch` requests.
+- **Seamless Integration**: Use the standard `fetch` API without modifications.
+- **Flexible Configuration**: Enable CORS globally or on a per-request basis.
 
 ## Installation
 
