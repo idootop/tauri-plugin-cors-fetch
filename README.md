@@ -1,4 +1,4 @@
-![tauri-plugin-cors-fetch](https://github.com/idootop/tauri-plugin-cors-fetch/blob/main/banner.png)
+![tauri-plugin-cors-fetch](https://github.com/idootop/tauri-plugin-cors-fetch/raw/main/banner.png)
 
 [![crates.io](https://img.shields.io/crates/v/tauri-plugin-cors-fetch.svg)](https://crates.io/crates/tauri-plugin-cors-fetch)
 [![Documentation](https://docs.rs/tauri-plugin-cors-fetch/badge.svg)](https://docs.rs/tauri-plugin-cors-fetch)
