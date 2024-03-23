@@ -36,6 +36,18 @@ fn main() {
 }
 ```
 
+Add permissions for this plugin:
+
+```json
+// src-tauri/capabilities/main.json
+{
+  "permissions": [
+    "cors-fetch:allow-cancel-cors-request"
+    // ...
+  ]
+}
+```
+
 After installing and initializing the plugin, you can start making `fetch` requests from your Tauri application without encountering CORS-related errors.
 
 ```javascript
@@ -55,7 +67,15 @@ window.corsFetch("https://example.com/api");
 Note: To allow requests, you may need to update your Content Security Policy (CSP) to include `x-http` and `x-https` protocols:
 
 ```json
-"csp": "default-src x-http: x-https: 'self'; connect-src ipc: http://ipc.localhost"
+// src-tauri/tauri.conf.json
+{
+  "app": {
+    "withGlobalTauri": true,
+    "security": {
+      "csp": "default-src x-http: x-https: 'self'; connect-src ipc: http://ipc.localhost"
+    }
+  }
+}
 ```
 
 ## How it Works
