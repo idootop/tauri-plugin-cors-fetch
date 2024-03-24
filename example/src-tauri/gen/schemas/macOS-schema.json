@@ -248,6 +248,7 @@
           ]
         },
         {
+          "description": "cors-fetch:default -> Allows all fetch operations",
           "type": "string",
           "enum": [
             "cors-fetch:default"

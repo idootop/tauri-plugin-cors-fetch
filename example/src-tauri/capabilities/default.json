@@ -11,7 +11,6 @@
     "image:default",
     "resources:default",
     "menu:default",
-    "tray:default",
-    "cors-fetch:allow-cancel-cors-request"
+    "tray:default"
   ]
 }

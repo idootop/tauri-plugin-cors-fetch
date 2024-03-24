@@ -38,18 +38,6 @@ fn main() {
 }
 ```
 
-Add permissions for this plugin:
-
-```json
-// src-tauri/capabilities/main.json
-{
-  "permissions": [
-    "cors-fetch:allow-cancel-cors-request"
-    // ...
-  ]
-}
-```
-
 After installing and initializing the plugin, you can start making `fetch` requests from your Tauri application without encountering CORS-related errors.
 
 ```javascript
