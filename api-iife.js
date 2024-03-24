@@ -1,4 +1,6 @@
 class CORSFetch {
+  _requestId = 1;
+
   constructor() {
     window.originalFetch = fetch.bind(window);
     window.hookedFetch = this.hookedFetch.bind(this);
@@ -16,50 +18,43 @@ class CORSFetch {
       return window.originalFetch(input, init);
     }
 
-    const maxRedirections = init?.maxRedirections;
-    const connectTimeout = init?.connectTimeout;
-    const proxy = init?.proxy;
+    return new Promise(async (resolve, reject) => {
+      const requestId = this._requestId++;
 
-    // Remove these fields before creating the request
-    if (init) {
-      delete init.maxRedirections;
-      delete init.connectTimeout;
-      delete init.proxy;
-    }
+      const maxRedirections = init?.maxRedirections;
+      const connectTimeout = init?.connectTimeout;
+      const proxy = init?.proxy;
 
-    const signal = init?.signal;
+      // Remove these fields before creating the request
+      if (init) {
+        delete init.maxRedirections;
+        delete init.connectTimeout;
+        delete init.proxy;
+      }
 
-    const headers = !init?.headers
-      ? []
-      : init.headers instanceof Headers
-      ? Array.from(init.headers.entries())
-      : Array.isArray(init.headers)
-      ? init.headers
-      : Object.entries(init.headers);
+      const signal = init?.signal;
 
-    const mappedHeaders = headers.map(([name, val]) => [
-      name,
-      // we need to ensure we have all values as strings
-      typeof val === "string" ? val : val.toString(),
-    ]);
+      const headers = !init?.headers
+        ? []
+        : init.headers instanceof Headers
+        ? Array.from(init.headers.entries())
+        : Array.isArray(init.headers)
+        ? init.headers
+        : Object.entries(init.headers);
 
-    const req = new Request(input, init);
-    const buffer = await req.arrayBuffer();
-    const reqData = buffer.byteLength
-      ? Array.from(new Uint8Array(buffer))
-      : null;
+      const mappedHeaders = headers.map(([name, val]) => [
+        name,
+        // we need to ensure we have all values as strings
+        typeof val === "string" ? val : val.toString(),
+      ]);
 
-    console.log("✅ start fetch", {
-      method: req.method,
-      url: req.url,
-      headers: mappedHeaders,
-      data: reqData,
-      maxRedirections,
-      connectTimeout,
-      proxy,
-    });
-    const rid = await this._invoke("plugin:cors-fetch|fetch", {
-      clientConfig: {
+      const req = new Request(input, init);
+      const buffer = await req.arrayBuffer();
+      const reqData = buffer.byteLength
+        ? Array.from(new Uint8Array(buffer))
+        : null;
+
+      console.log("✅ start fetch", {
         method: req.method,
         url: req.url,
         headers: mappedHeaders,
@@ -67,53 +62,66 @@ class CORSFetch {
         maxRedirections,
         connectTimeout,
         proxy,
-      },
-    });
-
-    console.log("✅ rid", rid);
-
-    signal?.addEventListener("abort", (e) => {
-      console.log("❌ fetch_cancel", rid);
-      this._invoke("plugin:cors-fetch|fetch_cancel", {
-        rid,
       });
-    });
+      const rid = await this._invoke("plugin:cors-fetch|fetch", {
+        clientConfig: {
+          method: req.method,
+          url: req.url,
+          headers: mappedHeaders,
+          data: reqData,
+          maxRedirections,
+          connectTimeout,
+          proxy,
+        },
+      });
 
-    console.log("✅ fetch_send", rid);
-    const {
-      status,
-      statusText,
-      url,
-      headers: responseHeaders,
-      rid: responseRid,
-    } = await this._invoke("plugin:cors-fetch|fetch_send", {
-      rid,
-    });
+      console.log("✅ rid", rid);
 
-    console.log("✅ fetch_read_body", responseRid);
-    const body = await this._invoke("plugin:cors-fetch|fetch_read_body", {
-      rid: responseRid,
-    });
+      signal?.addEventListener("abort", async (e) => {
+        const error = e.target.reason;
+        this._invoke("plugin:cors-fetch|fetch_cancel", {
+          rid,
+        }).catch(() => {});
+        console.log("❌ fetch_cancel error", error);
+        reject(error);
+      });
 
-    const res = new Response(
-      body instanceof ArrayBuffer && body.byteLength
-        ? body
-        : body instanceof Array && body.length
-        ? new Uint8Array(body)
-        : null,
-      {
-        headers: responseHeaders,
+      console.log("✅ fetch_send", rid);
+      const {
         status,
         statusText,
-      }
-    );
+        url,
+        headers: responseHeaders,
+        rid: responseRid,
+      } = await this._invoke("plugin:cors-fetch|fetch_send", {
+        rid,
+      });
 
-    // url is read only but seems like we can do this
-    Object.defineProperty(res, "url", { value: url });
+      console.log("✅ fetch_read_body", responseRid);
+      const body = await this._invoke("plugin:cors-fetch|fetch_read_body", {
+        rid: responseRid,
+      });
 
-    console.log("✅ res", res);
+      const res = new Response(
+        body instanceof ArrayBuffer && body.byteLength
+          ? body
+          : body instanceof Array && body.length
+          ? new Uint8Array(body)
+          : null,
+        {
+          headers: responseHeaders,
+          status,
+          statusText,
+        }
+      );
 
-    return res;
+      // url is read only but seems like we can do this
+      Object.defineProperty(res, "url", { value: url });
+
+      console.log("✅ res", res);
+
+      resolve(res);
+    });
   }
 
   _invoke(cmd, args, options) {
