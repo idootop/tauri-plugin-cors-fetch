@@ -54,7 +54,7 @@ fetch("https://example.com/api")
 window.corsFetch("https://example.com/api");
 ```
 
-Note: To allow requests, you may need to update your Content Security Policy (CSP) to include `x-http` and `x-https` protocols:
+Note: To allow requests, you may need to enable `withGlobalTauri` and update your Content Security Policy (CSP) to include `x-http` and `x-https` protocols:
 
 ```json
 // src-tauri/tauri.conf.json

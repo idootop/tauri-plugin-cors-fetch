@@ -1,4 +1,3 @@
-pub const INJECT_SCRIPT: &str = r#"
 class CORSFetch {
   _fetch;
   _request_id = 1;
@@ -56,4 +55,3 @@ class CORSFetch {
   window.corsFetch = cf.corsFetch.bind(cf);
   window.enableCORSFetch = cf.enableCORS.bind(cf);
 })();
-"#;
