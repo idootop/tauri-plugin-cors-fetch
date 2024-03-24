@@ -54,17 +54,23 @@ class CORSFetch {
         ? Array.from(new Uint8Array(buffer))
         : null;
 
-      console.log("✅ start fetch", {
-        method: req.method,
-        url: req.url,
-        headers: mappedHeaders,
-        data: reqData,
-        maxRedirections,
-        connectTimeout,
-        proxy,
+      signal?.addEventListener("abort", async (e) => {
+        const error = e.target.reason;
+        this._invoke("plugin:cors-fetch|cancel_cors_request", {
+          requestId,
+        }).catch(() => {});
+        reject(error);
       });
-      const rid = await this._invoke("plugin:cors-fetch|fetch", {
-        clientConfig: {
+
+      const {
+        status,
+        statusText,
+        url,
+        body,
+        headers: responseHeaders,
+      } = await this._invoke("plugin:cors-fetch|cors_request", {
+        request: {
+          requestId,
           method: req.method,
           url: req.url,
           headers: mappedHeaders,
@@ -73,33 +79,6 @@ class CORSFetch {
           connectTimeout,
           proxy,
         },
-      });
-
-      console.log("✅ rid", rid);
-
-      signal?.addEventListener("abort", async (e) => {
-        const error = e.target.reason;
-        this._invoke("plugin:cors-fetch|fetch_cancel", {
-          rid,
-        }).catch(() => {});
-        console.log("❌ fetch_cancel error", error);
-        reject(error);
-      });
-
-      console.log("✅ fetch_send", rid);
-      const {
-        status,
-        statusText,
-        url,
-        headers: responseHeaders,
-        rid: responseRid,
-      } = await this._invoke("plugin:cors-fetch|fetch_send", {
-        rid,
-      });
-
-      console.log("✅ fetch_read_body", responseRid);
-      const body = await this._invoke("plugin:cors-fetch|fetch_read_body", {
-        rid: responseRid,
       });
 
       const res = new Response(
@@ -117,8 +96,6 @@ class CORSFetch {
 
       // url is read only but seems like we can do this
       Object.defineProperty(res, "url", { value: url });
-
-      console.log("✅ res", res);
 
       resolve(res);
     });

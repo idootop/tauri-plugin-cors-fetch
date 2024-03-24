@@ -1,5 +1,9 @@
 | Permission | Description |
 |------|-----|
+|`allow-cancel-cors-request`|Enables the cancel_cors_request command without any pre-configured scope.|
+|`deny-cancel-cors-request`|Denies the cancel_cors_request command without any pre-configured scope.|
+|`allow-cors-request`|Enables the cors_request command without any pre-configured scope.|
+|`deny-cors-request`|Denies the cors_request command without any pre-configured scope.|
 |`allow-fetch`|Enables the fetch command without any pre-configured scope.|
 |`deny-fetch`|Denies the fetch command without any pre-configured scope.|
 |`allow-fetch-cancel`|Enables the fetch_cancel command without any pre-configured scope.|

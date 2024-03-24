@@ -2,8 +2,6 @@
 [default]
 description = "Allows all fetch operations"
 permissions = [
-  "allow-fetch",
-  "allow-fetch-cancel",
-  "allow-fetch-read-body",
-  "allow-fetch-send",
+  "allow-cors-request",
+  "allow-cancel-cors-request",
 ]

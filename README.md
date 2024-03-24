@@ -8,7 +8,10 @@ An **unofficial** Tauri plugin that enables seamless cross-origin resource shari
 
 ## Motivation
 
-When developing cross-platform desktop applications with [Tauri](https://tauri.app), you may encounter CORS restrictions that prevent direct access to certain web resources, such as [OpenAI](https://openai.com/product) services. While the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http) can achieve CORS bypassing, it requires modifying your network requests and may not be compatible with third-party dependencies that rely on the standard `fetch` API.
+
+When building cross-platform desktop applications with [Tauri](https://tauri.app), we often need to access services like [OpenAI](https://openai.com/product) that are restricted by **Cross-Origin Resource Sharing (CORS)** policies in web environments. 
+
+However, on the desktop, we can bypass CORS and access these services directly. While the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http) can bypass CORS, it requires modifying your network requests and might not be compatible with third-party dependencies that rely on the standard `fetch` API.
 
 ## How it Works
 
@@ -78,7 +81,7 @@ window.originalFetch("https://example.com/api");
 
 ## Limitation
 
-1. **No Custom CSP Policy Support**: By default, all HTTP/HTTPS requests will be redirected to [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http).
+1. **No Custom CSP Policy Support**: By default, all HTTP/HTTPS requests will be redirected to local native requests.
 2. **No XMLHttpRequest Support**: The plugin is designed specifically to work with the modern `fetch` API and does not support `XMLHttpRequest` (XHR) requests.
 
 ## License

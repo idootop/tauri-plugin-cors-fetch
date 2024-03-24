@@ -9,30 +9,18 @@
 pub use reqwest;
 use tauri::{
     plugin::{Builder, TauriPlugin},
-    AppHandle, Manager, Runtime,
+    Runtime,
 };
 
 pub use error::{Error, Result};
-
 mod commands;
 mod error;
-
-struct CORSFetch<R: Runtime> {
-    #[allow(dead_code)]
-    app: AppHandle<R>,
-}
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
     Builder::<R>::new("cors-fetch")
         .invoke_handler(tauri::generate_handler![
-            commands::fetch,
-            commands::fetch_cancel,
-            commands::fetch_send,
-            commands::fetch_read_body,
+            commands::cors_request,
+            commands::cancel_cors_request,
         ])
-        .setup(|app, _api| {
-            app.manage(CORSFetch { app: app.clone() });
-            Ok(())
-        })
         .build()
 }
