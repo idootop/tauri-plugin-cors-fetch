@@ -307,6 +307,13 @@
           "enum": [
             "deny-cancel-cors-request"
           ]
+        },
+        {
+          "description": "default -> Allows all fetch operations",
+          "type": "string",
+          "enum": [
+            "default"
+          ]
         }
       ]
     }
