@@ -27,13 +27,15 @@ class CORSFetch {
         "x-request-id": id.toString(),
       },
     };
-    try {
-      const response = await window.originalFetch(url, init);
-      return response;
-    } catch (error) {
-      await this._invoke("plugin:cors-fetch|cancel_cors_request", { id });
-      return error;
-    }
+    return new Promise(async (resolve, reject) => {
+      try {
+        const response = await window.originalFetch(url, init);
+        resolve(response);
+      } catch (error) {
+        await this._invoke("plugin:cors-fetch|cancel_cors_request", { id });
+        reject(error);
+      }
+    });
   }
 
   _invoke(cmd, args, options) {
