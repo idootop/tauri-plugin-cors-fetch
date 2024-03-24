@@ -11,6 +11,7 @@
     "image:default",
     "resources:default",
     "menu:default",
-    "tray:default"
+    "tray:default",
+    "cors-fetch:default"
   ]
 }

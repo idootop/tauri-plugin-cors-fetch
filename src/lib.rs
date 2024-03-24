@@ -1,26 +1,26 @@
+// Copyright 2019-2023 Tauri Programme within The Commons Conservancy
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: MIT
+
+//! ![tauri-plugin-cors-fetch](https://github.com/idootop/tauri-plugin-cors-fetch/raw/main/banner.png)
+//!
+//! Enabling Cross-Origin Resource Sharing (CORS) for Fetch Requests within Tauri applications.
+
+pub use reqwest;
 use tauri::{
     plugin::{Builder, TauriPlugin},
     Runtime,
 };
 
-mod cors;
+pub use error::{Error, Result};
+mod commands;
+mod error;
 
 pub fn init<R: Runtime>() -> TauriPlugin<R> {
-    Builder::new("cors-fetch")
-        .invoke_handler(tauri::generate_handler![cors::cancel_cors_request])
-        .register_asynchronous_uri_scheme_protocol("x-http", move |_app, req, responder| {
-            tauri::async_runtime::spawn(async move {
-                if let Some(resp) = cors::cors_request(req).await {
-                    responder.respond(resp);
-                }
-            });
-        })
-        .register_asynchronous_uri_scheme_protocol("x-https", move |_app, req, responder| {
-            tauri::async_runtime::spawn(async move {
-                if let Some(resp) = cors::cors_request(req).await {
-                    responder.respond(resp);
-                }
-            });
-        })
+    Builder::<R>::new("cors-fetch")
+        .invoke_handler(tauri::generate_handler![
+            commands::cors_request,
+            commands::cancel_cors_request,
+        ])
         .build()
 }

@@ -6,11 +6,16 @@
 
 An **unofficial** Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications.
 
-## Overview
+## Motivation
 
-When developing cross-platform desktop applications with [Tauri](https://tauri.app), you may encounter CORS restrictions that prevent direct access to certain web resources, such as [OpenAI](https://openai.com/product) services. While the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http) can achieve CORS bypassing, it requires modifying your network requests and may not be compatible with third-party dependencies that rely on the standard `fetch` API.
 
-`tauri-plugin-cors-fetch` provides a transparent solution by automatically intercepting and modifying outgoing `fetch` requests, adding the necessary headers to bypass CORS restrictions. This allows you to continue using the standard `fetch` API without the need for additional code changes or workarounds.
+When building cross-platform desktop applications with [Tauri](https://tauri.app), we often need to access services like [OpenAI](https://openai.com/product) that are restricted by **Cross-Origin Resource Sharing (CORS)** policies in web environments. 
+
+However, on the desktop, we can bypass CORS and access these services directly. While the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http) can bypass CORS, it requires modifying your network requests and might not be compatible with third-party dependencies that rely on the standard `fetch` API.
+
+## How it Works
+
+This plugin forks the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http) plugin. During webpage initialization, it hooks the browser's native `fetch` method and redirects requests to [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http), allowing you to continue using the standard `fetch` API without the need for additional code changes or workarounds.
 
 ## Installation
 
@@ -74,29 +79,10 @@ window.hookedFetch("https://example.com/api");
 window.originalFetch("https://example.com/api");
 ```
 
-Note: To allow requests, you may update your Content Security Policy (CSP) to include `x-http` and `x-https` protocols:
-
-```json
-// src-tauri/tauri.conf.json
-{
-  "app": {
-    "withGlobalTauri": true,
-    "security": {
-      "csp": "default-src x-http: x-https: 'self'; connect-src ipc: http://ipc.localhost"
-    }
-  }
-}
-```
-
-## How it Works
-
-This plugin registers custom `x-http` and `x-https` protocols for Tauri applications. During webpage initialization, it hooks the browser's native `fetch` method and redirects `http` and `https` requests to the `x-http` and `x-https` custom protocols. All traffic then goes through local native requests, and the plugin adds CORS-related headers to the response headers, effectively bypassing CORS.
-
 ## Limitation
 
 1. **No Custom CSP Policy Support**: By default, all HTTP/HTTPS requests will be redirected to local native requests.
 2. **No XMLHttpRequest Support**: The plugin is designed specifically to work with the modern `fetch` API and does not support `XMLHttpRequest` (XHR) requests.
-3. **No Mobile Platform Support**: Only desktop platforms are supported; iOS and Android have not been tested.
 
 ## License
 

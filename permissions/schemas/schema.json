@@ -309,6 +309,20 @@
           ]
         },
         {
+          "description": "allow-cors-request -> Enables the cors_request command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "allow-cors-request"
+          ]
+        },
+        {
+          "description": "deny-cors-request -> Denies the cors_request command without any pre-configured scope.",
+          "type": "string",
+          "enum": [
+            "deny-cors-request"
+          ]
+        },
+        {
           "description": "default -> Allows all fetch operations",
           "type": "string",
           "enum": [
