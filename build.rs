@@ -1,4 +1,4 @@
-const COMMANDS: &[&str] = &["cancel_cors_request"];
+const COMMANDS: &[&str] = &["fetch", "fetch_cancel", "fetch_send", "fetch_read_body"];
 
 fn main() {
     tauri_plugin::Builder::new(COMMANDS)

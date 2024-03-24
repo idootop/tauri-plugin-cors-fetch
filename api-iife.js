@@ -1,57 +1,129 @@
 class CORSFetch {
-  _fetch;
-  _request_id = 1;
-
   constructor() {
-    this._fetch = fetch.bind(window);
-    window.fetch = this._hookFetch.bind(this);
+    window.originalFetch = fetch.bind(window);
+    window.hookedFetch = this.hookedFetch.bind(this);
+    this.enableCORS(true);
   }
 
-  _enableCORS = true;
   enableCORS(enable) {
-    this._enableCORS = enable;
+    window.fetch = enable ? window.hookedFetch : window.originalFetch;
   }
 
-  async _hookFetch(input, init) {
-    return this.corsFetch(input, init, this._enableCORS);
-  }
+  async hookedFetch(input, init) {
+    let reqUrl = input instanceof Request ? input.url : input.toString();
 
-  async corsFetch(input, init, cors = true) {
-    let id = 0;
-    let url = input instanceof Request ? input.url : input.toString();
-    const shouldCORS = cors && /^(?:x-)?https?:\/\//i.test(url);
-    if (shouldCORS) {
-      if (!url.startsWith("x-")) {
-        url = "x-" + url;
-      }
-      id = this._request_id++;
-      init = {
-        ...init,
-        headers: {
-          ...init?.headers,
-          "x-request-id": id.toString(),
-        },
-      };
+    if (!/^https?:\/\//i.test(reqUrl)) {
+      return window.originalFetch(input, init);
     }
 
-    try {
-      const response = await this._fetch(url, init);
-      return response;
-    } catch (error) {
-      if (id) {
-        await this._invoke("plugin:cors-fetch|cancel_cors_request", { id });
-      }
-      return error;
+    const maxRedirections = init?.maxRedirections;
+    const connectTimeout = init?.connectTimeout;
+    const proxy = init?.proxy;
+
+    // Remove these fields before creating the request
+    if (init) {
+      delete init.maxRedirections;
+      delete init.connectTimeout;
+      delete init.proxy;
     }
+
+    const signal = init?.signal;
+
+    const headers = !init?.headers
+      ? []
+      : init.headers instanceof Headers
+      ? Array.from(init.headers.entries())
+      : Array.isArray(init.headers)
+      ? init.headers
+      : Object.entries(init.headers);
+
+    const mappedHeaders = headers.map(([name, val]) => [
+      name,
+      // we need to ensure we have all values as strings
+      typeof val === "string" ? val : val.toString(),
+    ]);
+
+    const req = new Request(input, init);
+    const buffer = await req.arrayBuffer();
+    const reqData = buffer.byteLength
+      ? Array.from(new Uint8Array(buffer))
+      : null;
+
+    console.log("✅ start fetch", {
+      method: req.method,
+      url: req.url,
+      headers: mappedHeaders,
+      data: reqData,
+      maxRedirections,
+      connectTimeout,
+      proxy,
+    });
+    const rid = await this._invoke("plugin:cors-fetch|fetch", {
+      clientConfig: {
+        method: req.method,
+        url: req.url,
+        headers: mappedHeaders,
+        data: reqData,
+        maxRedirections,
+        connectTimeout,
+        proxy,
+      },
+    });
+
+    console.log("✅ rid", rid);
+
+    signal?.addEventListener("abort", (e) => {
+      console.log("❌ fetch_cancel", rid);
+      this._invoke("plugin:cors-fetch|fetch_cancel", {
+        rid,
+      });
+    });
+
+    console.log("✅ fetch_send", rid);
+    const {
+      status,
+      statusText,
+      url,
+      headers: responseHeaders,
+      rid: responseRid,
+    } = await this._invoke("plugin:cors-fetch|fetch_send", {
+      rid,
+    });
+
+    console.log("✅ fetch_read_body", responseRid);
+    const body = await this._invoke("plugin:cors-fetch|fetch_read_body", {
+      rid: responseRid,
+    });
+
+    const res = new Response(
+      body instanceof ArrayBuffer && body.byteLength
+        ? body
+        : body instanceof Array && body.length
+        ? new Uint8Array(body)
+        : null,
+      {
+        headers: responseHeaders,
+        status,
+        statusText,
+      }
+    );
+
+    // url is read only but seems like we can do this
+    Object.defineProperty(res, "url", { value: url });
+
+    console.log("✅ res", res);
+
+    return res;
   }
 
   _invoke(cmd, args, options) {
-    return window.__TAURI_INTERNALS__.invoke(cmd, args, options);
+    if ("__TAURI__" in window) {
+      return window.__TAURI_INTERNALS__.invoke(cmd, args, options);
+    }
   }
 }
 
 (function () {
   const cf = new CORSFetch();
-  window.corsFetch = cf.corsFetch.bind(cf);
   window.enableCORSFetch = cf.enableCORS.bind(cf);
 })();
