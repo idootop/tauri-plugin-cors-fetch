@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-License-Identifier: MIT
 
-// Source: https://docs.rs/crate/tauri-plugin-http/2.0.0-beta.3
+// Source: tauri-plugin-http@2.0.0-beta.3
 
 use std::{collections::HashMap, sync::Arc, time::Duration};
 

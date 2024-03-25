@@ -8,14 +8,13 @@ An **unofficial** Tauri plugin that enables seamless cross-origin resource shari
 
 ## Motivation
 
+When building cross-platform desktop applications with [Tauri](https://tauri.app), we often need to access services like [OpenAI](https://openai.com/product) that are restricted by **Cross-Origin Resource Sharing (CORS)** policies in web environments.
 
-When building cross-platform desktop applications with [Tauri](https://tauri.app), we often need to access services like [OpenAI](https://openai.com/product) that are restricted by **Cross-Origin Resource Sharing (CORS)** policies in web environments. 
-
-However, on the desktop, we can bypass CORS and access these services directly. While the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http) can bypass CORS, it requires modifying your network requests and might not be compatible with third-party dependencies that rely on the standard `fetch` API.
+However, on the desktop, we can bypass CORS and access these services directly. While the official [tauri-plugin-http](https://crates.io/crates/tauri-plugin-http) can bypass CORS, it requires modifying your network requests and might not be compatible with third-party dependencies that rely on the standard `fetch` API.
 
 ## How it Works
 
-This plugin forks the official [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http) plugin. During webpage initialization, it hooks the browser's native `fetch` method and redirects requests to [tauri-plugin-http](https://docs.rs/crate/tauri-plugin-http), allowing you to continue using the standard `fetch` API without the need for additional code changes or workarounds.
+This plugin extends the official [tauri-plugin-http](https://crates.io/crates/tauri-plugin-http) by hooking into the browser's native `fetch` method during webpage initialization. It transparently redirects requests to the [tauri-plugin-http](https://crates.io/crates/tauri-plugin-http), allowing you to use the standard `fetch` API without additional code changes or workarounds.
 
 ## Installation
 

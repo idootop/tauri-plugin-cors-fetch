@@ -12,9 +12,16 @@ class CORSFetch {
   }
 
   async hookedFetch(input, init) {
-    let reqUrl = input instanceof Request ? input.url : input.toString();
+    const _url = input instanceof Request ? input.url : input.toString();
+    const isHttpRequests = /^https?:\/\//i.test(_url);
+    
+    // `ipc://localhost/${path}` and `http://ipc.localhost/${path}` are used for Tauri RPC requests
+    // https://github.com/tauri-apps/tauri/blob/7898b601d14ed62053dd24011fabadf31ec1af45/core/tauri/scripts/core.js#L12
+    const isTauriIpcRequests =
+      /^ipc:\/\/localhost\//i.test(_url) ||
+      /^http:\/\/ipc.localhost\//i.test(_url);
 
-    if (!/^https?:\/\//i.test(reqUrl)) {
+    if (!isHttpRequests || isTauriIpcRequests) {
       return window.originalFetch(input, init);
     }
 
