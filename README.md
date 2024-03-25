@@ -6,7 +6,7 @@
 
 An **unofficial** Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications.
 
-## Motivation
+## Overview
 
 When building cross-platform desktop applications with [Tauri](https://tauri.app), we often need to access services like [OpenAI](https://openai.com/product) that are restricted by **Cross-Origin Resource Sharing (CORS)** policies in web environments.
 
