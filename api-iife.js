@@ -13,7 +13,15 @@ class CORSFetch {
 
   async hookedFetch(input, init) {
     let url = input instanceof Request ? input.url : input.toString();
-    if (!/^(?:x-)?https?:\/\//i.test(url)) {
+    const isHttpRequests = /^(?:x-)?https?:\/\//i.test(url);
+    
+    // `ipc://localhost/${path}` and `http://ipc.localhost/${path}` are used for Tauri IPC requests
+    // https://github.com/tauri-apps/tauri/blob/7898b601d14ed62053dd24011fabadf31ec1af45/core/tauri/scripts/core.js#L12
+    const isTauriIpcRequests =
+      /^ipc:\/\/localhost\//i.test(url) ||
+      /^http:\/\/ipc.localhost\//i.test(url);
+
+    if (!isHttpRequests || isTauriIpcRequests) {
       return window.originalFetch(input, init);
     }
     if (!url.startsWith("x-")) {
