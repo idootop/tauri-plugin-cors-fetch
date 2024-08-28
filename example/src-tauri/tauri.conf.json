@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "identifier": "com.tauri.dev",
   "build": {
+    "beforeDevCommand": "pnpm start",
+    "devUrl": "http://localhost:5173",
     "frontendDist": "../src"
   },
   "app": {
