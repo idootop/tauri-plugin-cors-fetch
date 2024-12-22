@@ -1,3 +1,7 @@
+# v3.1.0
+
+fix: metadata for platforms support
+
 # v3.0.0
 
 **✨ New Features**
