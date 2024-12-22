@@ -5,7 +5,6 @@
 [![MIT licensed](https://img.shields.io/crates/l/tauri-plugin-cors-fetch.svg)](./LICENSE)
 [![Documentation](https://docs.rs/tauri-plugin-cors-fetch/badge.svg)](https://docs.rs/crate/tauri-plugin-cors-fetch)
 
-
 | Platform | Supported |
 | -------- | --------- |
 | Linux    | ✓         |
@@ -82,10 +81,10 @@ fetch("https://example.com/api")
   .catch((error) => console.error(error));
 
 // Use the hooked fetch directly
-window.hookedFetch("https://example.com/api");
+window.fetchCORS("https://example.com/api");
 
 // Use the original, unhooked fetch
-window.originalFetch("https://example.com/api");
+window.fetchNative("https://example.com/api");
 ```
 
 ## Limitation

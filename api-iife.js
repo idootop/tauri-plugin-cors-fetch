@@ -2,19 +2,19 @@ class CORSFetch {
   _requestId = 1;
 
   constructor() {
-    window.originalFetch = fetch.bind(window);
-    window.hookedFetch = this.hookedFetch.bind(this);
+    window.fetchNative = fetch.bind(window);
+    window.fetchCORS = this.fetchCORS.bind(this);
     this.enableCORS(true);
   }
 
   enableCORS(enable) {
-    window.fetch = enable ? window.hookedFetch : window.originalFetch;
+    window.fetch = enable ? window.fetchCORS : window.fetchNative;
   }
 
-  async hookedFetch(input, init) {
+  async fetchCORS(input, init) {
     const _url = input instanceof Request ? input.url : input.toString();
     const isHttpRequests = /^https?:\/\//i.test(_url);
-    
+
     // `ipc://localhost/${path}` and `http://ipc.localhost/${path}` are used for Tauri IPC requests
     // https://github.com/tauri-apps/tauri/blob/7898b601d14ed62053dd24011fabadf31ec1af45/core/tauri/scripts/core.js#L12
     const isTauriIpcRequests =
@@ -22,7 +22,7 @@ class CORSFetch {
       /^http:\/\/ipc.localhost\//i.test(_url);
 
     if (!isHttpRequests || isTauriIpcRequests) {
-      return window.originalFetch(input, init);
+      return window.fetchNative(input, init);
     }
 
     return new Promise(async (resolve, reject) => {
