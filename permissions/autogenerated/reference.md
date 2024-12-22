@@ -5,7 +5,7 @@ Allows all fetch operations
 - `allow-cors-request`
 - `allow-cancel-cors-request`
 
-## Permission Table 
+## Permission Table
 
 <table>
 <tr>

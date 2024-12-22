@@ -295,39 +295,29 @@
       "type": "string",
       "oneOf": [
         {
-          "description": "allow-cancel-cors-request -> Enables the cancel_cors_request command without any pre-configured scope.",
+          "description": "Enables the cancel_cors_request command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "allow-cancel-cors-request"
-          ]
+          "const": "allow-cancel-cors-request"
         },
         {
-          "description": "deny-cancel-cors-request -> Denies the cancel_cors_request command without any pre-configured scope.",
+          "description": "Denies the cancel_cors_request command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "deny-cancel-cors-request"
-          ]
+          "const": "deny-cancel-cors-request"
         },
         {
-          "description": "allow-cors-request -> Enables the cors_request command without any pre-configured scope.",
+          "description": "Enables the cors_request command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "allow-cors-request"
-          ]
+          "const": "allow-cors-request"
         },
         {
-          "description": "deny-cors-request -> Denies the cors_request command without any pre-configured scope.",
+          "description": "Denies the cors_request command without any pre-configured scope.",
           "type": "string",
-          "enum": [
-            "deny-cors-request"
-          ]
+          "const": "deny-cors-request"
         },
         {
-          "description": "default -> Allows all fetch operations",
+          "description": "Allows all fetch operations",
           "type": "string",
-          "enum": [
-            "default"
-          ]
+          "const": "default"
         }
       ]
     }
