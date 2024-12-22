@@ -5,6 +5,8 @@
 [![MIT licensed](https://img.shields.io/crates/l/tauri-plugin-cors-fetch.svg)](./LICENSE)
 [![Documentation](https://docs.rs/tauri-plugin-cors-fetch/badge.svg)](https://docs.rs/crate/tauri-plugin-cors-fetch)
 
+An **unofficial** Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications.
+
 | Platform | Supported |
 | -------- | --------- |
 | Linux    | ✓         |
@@ -12,8 +14,6 @@
 | macOS    | ✓         |
 | Android  | ✓         |
 | iOS      | ✓         |
-
-An **unofficial** Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications.
 
 ## Overview
 
