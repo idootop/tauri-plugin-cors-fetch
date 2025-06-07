@@ -1,25 +1,27 @@
-const { invoke } = window.__TAURI__.core;
-
 let greetInputEl;
 let greetMsgEl;
 
-async function greet() {
-  const input = !greetInputEl.value
-    ? "https://api.openai.com"
-    : greetInputEl.value;
-  fetch(input)
-    .then((response) => response.json())
-    .then(
-      (data) => (greetMsgEl.textContent = JSON.stringify(data, undefined, 4))
-    )
-    .catch((error) => (greetMsgEl.textContent = error.toString()));
+async function fetchData() {
+  const url = greetInputEl.value || "https://api.openai.com";
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    greetMsgEl.textContent = JSON.stringify(data, undefined, 4);
+  } catch (error) {
+    greetMsgEl.textContent = error.toString();
+  }
 }
+
+window.CORSFetch.config({
+  include: [/^https?:\/\//i],
+  exclude: ["https://api.openai.com/v1/chat/completions"],
+});
 
 window.addEventListener("DOMContentLoaded", () => {
   greetInputEl = document.querySelector("#greet-input");
   greetMsgEl = document.querySelector("#greet-msg");
   document.querySelector("#greet-form").addEventListener("submit", (e) => {
     e.preventDefault();
-    greet();
+    fetchData();
   });
 });
