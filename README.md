@@ -37,8 +37,8 @@ cargo add tauri-plugin-cors-fetch
 2. Initialize the plugin in your Tauri application setup:
 
 ```rust
-// src-tauri/main.rs
-fn main() {
+// src-tauri/src/lib.rs
+pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_cors_fetch::init())
         .run(tauri::generate_context!())
@@ -68,30 +68,41 @@ fn main() {
 
 ## Usage
 
-After installing and initializing the plugin, you can start making `fetch` requests from your Tauri application without encountering CORS-related errors.
+Once installed, the plugin automatically hooks into the browser's `fetch` API. You can use `fetch` normally without any code changes:
 
 ```javascript
-// Enable CORS for the hooked fetch globally (default is true on app start)
-window.enableCORSFetch(true);
-
-// Use the hooked fetch with CORS support
-fetch("https://example.com/api")
+// Standard fetch - now works with CORS
+fetch("https://api.example.com/data")
   .then((response) => response.json())
-  .then((data) => console.log(data))
-  .catch((error) => console.error(error));
-
-// Use the hooked fetch directly
-window.fetchCORS("https://example.com/api");
-
-// Use the original, unhooked fetch
-window.fetchNative("https://example.com/api");
+  .then((data) => console.log(data));
 ```
 
-## Limitation
+### Configuration (Optional)
 
-1. **No Custom CSP Policy Support**: By default, all HTTP/HTTPS requests will be redirected to local native requests.
-2. **No XMLHttpRequest Support**: The plugin is designed specifically to work with the modern `fetch` API and does not support `XMLHttpRequest` (XHR) requests.
+Configure which requests should bypass CORS:
+
+```javascript
+window.CORSFetch.config({
+  include: [/^https?:\/\//i], // Process all HTTP requests (default)
+  exclude: ["https://api.openai.com/v1/chat/completions"], // Skip CORS bypass
+});
+```
+
+### Alternative Methods
+
+```javascript
+// Direct CORS-enabled fetch
+window.fetchCORS("https://api.example.com/data");
+
+// Original native fetch (with CORS restrictions)
+window.fetchNative("https://api.example.com/data");
+```
+
+## Limitations
+
+- **Streaming**: Server-Sent Events (SSE) and streaming responses are not supported. See [implementation details](https://github.com/idootop/tauri-plugin-cors-fetch/issues/7#issuecomment-2791652415).
+- **XHR**: Only supports the modern `fetch` API, not `XMLHttpRequest`.
 
 ## License
 
-This project is licensed under the MIT License.
+[MIT](LICENSE) License © 2024-PRESENT Del Wang
