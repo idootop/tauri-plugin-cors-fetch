@@ -1,5 +1,27 @@
 # Changelog
 
+## v4.1.0
+
+### ✨ Features
+
+- **Default request configuration**: Added global configuration support for default request parameters applied to all CORS requests
+
+```javascript
+window.CORSFetch.config({
+  // Default request parameters (applied to all CORS requests)
+  // see https://v2.tauri.app/reference/javascript/http/#clientoptions
+  request: {
+    maxRedirections: 5, // Default maximum redirections
+    connectTimeout: 30 * 1000, // Default connection timeout (ms)
+    proxy: {
+      all: "http://127.0.0.1:7890", // Default proxy for all requests
+    },
+  },
+});
+```
+
+Closes [#10](https://github.com/idootop/tauri-plugin-cors-fetch/issues/10). Thanks to [@kanoshiou](https://github.com/kanoshiou) for the contribution in PR [#11](https://github.com/idootop/tauri-plugin-cors-fetch/issues/11).
+
 ## v4.0.0
 
 ### ✨ Features

@@ -3,7 +3,11 @@ class CORSFetch {
   _config = {
     include: [],
     exclude: [],
-    proxy: undefined,
+    request: {
+      proxy: undefined,
+      connectTimeout: undefined,
+      maxRedirections: undefined,
+    },
   };
 
   constructor() {
@@ -16,7 +20,14 @@ class CORSFetch {
     this._config = {
       include: config.include || [],
       exclude: config.exclude || [],
-      proxy: config.proxy || undefined,
+      request: {
+        proxy: config.request?.proxy || this._config.request.proxy,
+        connectTimeout:
+          config.request?.connectTimeout || this._config.request.connectTimeout,
+        maxRedirections:
+          config.request?.maxRedirections ||
+          this._config.request.maxRedirections,
+      },
     };
   }
 
@@ -71,9 +82,12 @@ class CORSFetch {
     return new Promise(async (resolve, reject) => {
       const requestId = this._requestId++;
 
-      const maxRedirections = init?.maxRedirections;
-      const connectTimeout = init?.connectTimeout;
-      const proxy = init?.proxy ? init.proxy : this._config.proxy;
+      // Use config defaults if not specified in init
+      const maxRedirections =
+        init?.maxRedirections ?? this._config.request.maxRedirections;
+      const connectTimeout =
+        init?.connectTimeout ?? this._config.request.connectTimeout;
+      const proxy = init?.proxy ?? this._config.request.proxy;
 
       // Remove these fields before creating the request
       if (init) {

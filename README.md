@@ -79,19 +79,35 @@ fetch("https://api.example.com/data")
 
 ### Configuration (Optional)
 
-Configure which requests should bypass CORS:
+Configure which requests should bypass CORS and set default request parameters:
 
 ```javascript
 window.CORSFetch.config({
   include: [/^https?:\/\//i], // Process all HTTP requests (default)
   exclude: ["https://api.openai.com/v1/chat/completions"], // Skip CORS bypass
-  // Enabling a proxy for fetch requests without proxy configuration
-  // see https://v2.tauri.app/reference/javascript/http/#proxy-1
-  proxy: {
-    all: "socks5://127.0.0.1:7890",
-  }
+  // Default request parameters (applied to all CORS requests)
+  // see https://v2.tauri.app/reference/javascript/http/#clientoptions
+  request: {
+    maxRedirections: 5, // Default maximum redirections
+    connectTimeout: 30 * 1000, // Default connection timeout (ms)
+    proxy: {
+      all: "http://127.0.0.1:7890", // Default proxy for all requests
+    },
+  },
 });
 ```
+
+**Configuration Options:**
+
+- `include`: Array of URL patterns (strings or RegExp) that should use CORS bypass
+- `exclude`: Array of URL patterns that should NOT use CORS bypass
+- `request`: Default request parameters (applied to all CORS requests) object containing:
+
+  - `connectTimeout`: Default connection timeout (ms)
+  - `maxRedirections`: Default maximum redirections to follow
+  - `proxy`: Default proxy configuration for all requests (see [Tauri HTTP proxy docs](https://v2.tauri.app/reference/javascript/http/#proxy-1))
+
+These default request parameters will be used for all CORS requests unless overridden in individual `fetch` calls.
 
 ### Alternative Methods
 
@@ -110,4 +126,4 @@ window.fetchNative("https://api.example.com/data");
 
 ## License
 
-[MIT](LICENSE) License © 2024-PRESENT Del Wang
+MIT License © 2024-PRESENT [Del Wang](https://del.wang)
