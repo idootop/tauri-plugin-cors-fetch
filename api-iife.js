@@ -3,6 +3,7 @@ class CORSFetch {
   _config = {
     include: [],
     exclude: [],
+    proxy: undefined,
   };
 
   constructor() {
@@ -15,6 +16,7 @@ class CORSFetch {
     this._config = {
       include: config.include || [],
       exclude: config.exclude || [],
+      proxy: config.proxy || undefined,
     };
   }
 
@@ -71,7 +73,7 @@ class CORSFetch {
 
       const maxRedirections = init?.maxRedirections;
       const connectTimeout = init?.connectTimeout;
-      const proxy = init?.proxy;
+      const proxy = init?.proxy ? init.proxy : this._config.proxy;
 
       // Remove these fields before creating the request
       if (init) {

@@ -15,6 +15,9 @@ async function fetchData() {
 window.CORSFetch.config({
   include: [/^https?:\/\//i],
   exclude: ["https://api.openai.com/v1/chat/completions"],
+  proxy: {
+    all: "socks5://127.0.0.1:7890",
+  },
 });
 
 window.addEventListener("DOMContentLoaded", () => {

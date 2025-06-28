@@ -85,6 +85,11 @@ Configure which requests should bypass CORS:
 window.CORSFetch.config({
   include: [/^https?:\/\//i], // Process all HTTP requests (default)
   exclude: ["https://api.openai.com/v1/chat/completions"], // Skip CORS bypass
+  // Enabling a proxy for fetch requests without proxy configuration
+  // see https://v2.tauri.app/reference/javascript/http/#proxy-1
+  proxy: {
+    all: "socks5://127.0.0.1:7890",
+  }
 });
 ```
 
