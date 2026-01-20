@@ -25,7 +25,7 @@ pub enum Error {
     HttpMethod(#[from] http::method::InvalidMethod),
     #[error("scheme {0} not supported")]
     SchemeNotSupport(String),
-    #[error("Request canceled")]
+    #[error("User cancelled the request")]
     RequestCanceled,
     #[error("failed to process data url")]
     DataUrlError,
