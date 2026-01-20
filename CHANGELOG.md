@@ -1,5 +1,18 @@
 # Changelog
 
+## v4.2.0
+
+### 🐛 Bug Fixes
+
+- **Catchable Errors:** Fixed an issue where fetch errors couldn't be caught using `try-catch` or `.catch()`. (Closes [#12](https://github.com/idootop/tauri-plugin-cors-fetch/issues/12))
+- **Async Propagation:** Refactored Promise logic to standard `async/await` to ensure exceptions are correctly propagated and logged.
+
+### 🚀 Features & Improvements
+
+- **Immutable Configuration:** Switched to object destructuring to ensure the user's `init` object remains unmodified.
+- **Stream Management:** Implemented a request cloning pattern to prevent "Stream is closed" errors when reading request bodies.
+- **Singleton Safety:** Added checks to prevent multiple script instances, ensuring `fetchNative` always references the original global fetch.
+
 ## v4.1.0
 
 ### ✨ Features

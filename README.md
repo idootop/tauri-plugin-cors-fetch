@@ -5,48 +5,43 @@
 [![MIT licensed](https://img.shields.io/crates/l/tauri-plugin-cors-fetch.svg)](./LICENSE)
 [![Documentation](https://docs.rs/tauri-plugin-cors-fetch/badge.svg)](https://docs.rs/crate/tauri-plugin-cors-fetch)
 
-An **unofficial** Tauri plugin that enables seamless cross-origin resource sharing (CORS) for web fetch requests within Tauri applications.
+An **unofficial** Tauri plugin that enables **seamless cross-origin (CORS) requests** by transparently proxying the native `fetch` API through Tauri's HTTP client.
 
-| Platform | Supported |
-| -------- | --------- |
-| Linux    | ✓         |
-| Windows  | ✓         |
-| macOS    | ✓         |
-| Android  | ✓         |
-| iOS      | ✓         |
+## Features
 
-## Overview
+- **Zero Code Change**: Use standard `fetch()` as you normally would.
+- **Transparent Proxying**: Automatically hooks into the browser's fetch.
+- **Configurable**: Granular control over which domains bypass CORS.
+- **Multi-platform**: Supports _Windows, macOS, Linux, iOS, and Android_.
 
-When building cross-platform desktop applications with [Tauri](https://tauri.app), we often need to access services like [OpenAI](https://openai.com/product) that are restricted by **Cross-Origin Resource Sharing (CORS)** policies in web environments.
+## Quick Start
 
-However, on the desktop, we can bypass CORS and access these services directly. While the official [tauri-plugin-http](https://crates.io/crates/tauri-plugin-http) can bypass CORS, it requires modifying your network requests and might not be compatible with third-party dependencies that rely on the standard `fetch` API.
+**1. Install Dependencies**
 
-## How it Works
-
-This plugin extends the official [tauri-plugin-http](https://crates.io/crates/tauri-plugin-http) by hooking into the browser's native `fetch` method during webpage initialization. It transparently redirects requests to the [tauri-plugin-http](https://crates.io/crates/tauri-plugin-http), allowing you to use the standard `fetch` API without additional code changes or workarounds.
-
-## Installation
-
-1. Add the plugin to your Tauri project's dependencies:
+Add the plugin to your `Cargo.toml`:
 
 ```shell
 # src-tauri
 cargo add tauri-plugin-cors-fetch
 ```
 
-2. Initialize the plugin in your Tauri application setup:
+**2. Initialize Plugin**
+
+Register the plugin in your Tauri setup:
 
 ```rust
 // src-tauri/src/lib.rs
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_cors_fetch::init())
+        .plugin(tauri_plugin_cors_fetch::init()) // 👈 here
         .run(tauri::generate_context!())
         .expect("failed to run app");
 }
 ```
 
-3. Add permissions in your `capabilities` configuration:
+**3. Configure Permissions & Settings**
+
+Add the required permission to your capability file:
 
 ```json
 // src-tauri/capabilities/default.json
@@ -55,7 +50,7 @@ pub fn run() {
 }
 ```
 
-4. Enable `withGlobalTauri` in your Tauri configuration:
+Ensure `withGlobalTauri` is enabled in `tauri.conf.json`:
 
 ```json
 // src-tauri/tauri.conf.json
@@ -68,61 +63,40 @@ pub fn run() {
 
 ## Usage
 
-Once installed, the plugin automatically hooks into the browser's `fetch` API. You can use `fetch` normally without any code changes:
+Once initialized, the plugin automatically hooks into the global `fetch`. No changes to your frontend code are required:
 
 ```javascript
-// Standard fetch - now works with CORS
-fetch("https://api.example.com/data")
-  .then((response) => response.json())
-  .then((data) => console.log(data));
+// This request now bypasses CORS automatically
+const response = await fetch("https://api.openai.com");
+const data = await response.json();
 ```
 
-### Configuration (Optional)
+### Configuration
 
-Configure which requests should bypass CORS and set default request parameters:
+You can fine-tune the behavior via `window.CORSFetch.config()`:
 
 ```javascript
 window.CORSFetch.config({
-  include: [/^https?:\/\//i], // Process all HTTP requests (default)
-  exclude: ["https://api.openai.com/v1/chat/completions"], // Skip CORS bypass
-  // Default request parameters (applied to all CORS requests)
-  // see https://v2.tauri.app/reference/javascript/http/#clientoptions
+  include: [/^https?:\/\//i], // Patterns to proxy (default: all)
+  exclude: ["https://api.openai.com/v1/chat/completions"],
+  // Default request options for Tauri HTTP Client
   request: {
-    maxRedirections: 5, // Default maximum redirections
-    connectTimeout: 30 * 1000, // Default connection timeout (ms)
-    proxy: {
-      all: "http://127.0.0.1:7890", // Default proxy for all requests
-    },
+    connectTimeout: 30 * 1000, // ms
+    maxRedirections: 5,
+    proxy: { all: "http://127.0.0.1:7890" },
   },
 });
 ```
 
-**Configuration Options:**
+### Direct Access APIs
 
-- `include`: Array of URL patterns (strings or RegExp) that should use CORS bypass
-- `exclude`: Array of URL patterns that should NOT use CORS bypass
-- `request`: Default request parameters (applied to all CORS requests) object containing:
-
-  - `connectTimeout`: Default connection timeout (ms)
-  - `maxRedirections`: Default maximum redirections to follow
-  - `proxy`: Default proxy configuration for all requests (see [Tauri HTTP proxy docs](https://v2.tauri.app/reference/javascript/http/#proxy-1))
-
-These default request parameters will be used for all CORS requests unless overridden in individual `fetch` calls.
-
-### Alternative Methods
-
-```javascript
-// Direct CORS-enabled fetch
-window.fetchCORS("https://api.example.com/data");
-
-// Original native fetch (with CORS restrictions)
-window.fetchNative("https://api.example.com/data");
-```
+- `window.fetchCORS(url, init)`: Explicitly use the CORS-bypassing fetch.
+- `window.fetchNative(url, init)`: Use the original browser fetch (subject to CORS).
 
 ## Limitations
 
-- **Streaming**: Server-Sent Events (SSE) and streaming responses are not supported. See [implementation details](https://github.com/idootop/tauri-plugin-cors-fetch/issues/7#issuecomment-2791652415).
-- **XHR**: Only supports the modern `fetch` API, not `XMLHttpRequest`.
+- **Fetch Only**: Does not support `XMLHttpRequest` (XHR).
+- **No Streaming**: Server-Sent Events (SSE) and response streaming are currently not supported.
 
 ## License
 
