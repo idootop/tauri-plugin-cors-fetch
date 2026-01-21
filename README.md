@@ -10,7 +10,7 @@ An **unofficial** Tauri plugin that enables **seamless cross-origin (CORS) reque
 ## Features
 
 - **Zero Code Change**: Use standard `fetch()` as you normally would.
-- **Streaming**: Supports response streaming and Server-Sent Events (SSE).
+- **Streaming & SSE**: Full support for Response Streaming and Server-Sent Events (SSE).
 - **Configurable**: Granular control over which domains bypass CORS.
 - **Multi-platform**: Supports _Windows, macOS, Linux, iOS, and Android_.
 

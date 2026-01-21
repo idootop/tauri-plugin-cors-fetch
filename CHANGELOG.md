@@ -1,5 +1,16 @@
 # Changelog
 
+## v5.0.0
+
+### 🚀 Features & Improvements
+
+- **Core Engine Upgrade:** Synchronized with `tauri-plugin-http` v2.5.6.
+  - **Streaming & SSE:** Full support for Response Streaming and Server-Sent Events (SSE).
+  - **Cookie Management:** Added support for `cookie-jar` to enable automatic cookie persistence and handling.
+  - **Security Configuration:** Introduced new `danger` options: `acceptInvalidCerts` and `acceptInvalidHostnames` for development/testing environments.
+- **Refined Control:** Improved the granularity and stability of request cancellation and `AbortSignal` handling.
+- **Dependency Update:** Upgraded `reqwest` to version 0.13 for improved performance and security.
+
 ## v4.2.0
 
 ### 🐛 Bug Fixes
