@@ -30,39 +30,38 @@ serde_json = "1"
 thiserror = "2"
 url = "2"
 http = "1"
-reqwest = { version = "0.12", default-features = false }
-once_cell = "1"
-tokio = { version = "1", features = ["macros"] }
+reqwest = { version = "0.13", default-features = false }
+tokio = { version = "1", features = ["full"] }
+dashmap = "6"
+futures-util = "0.3"
 
 [build-dependencies]
 tauri-plugin = { version = "2", features = ["build"] }
 
 [features]
-default = [
-  "rustls-tls",
-  "http2",
-  "charset",
-  "macos-system-configuration",
-  "cookies",
-]
-multipart = ["reqwest/multipart"]
-json = ["reqwest/json"]
-stream = ["reqwest/stream"]
+default = ["reqwest/default", "stream"]
+
+# Proxy for reqwest's core network features
+http2 = ["reqwest/http2"]
+rustls = ["reqwest/rustls"]
+rustls-no-provider = ["reqwest/rustls-no-provider"]
 native-tls = ["reqwest/native-tls"]
+native-tls-no-alpn = ["reqwest/native-tls-no-alpn"]
 native-tls-vendored = ["reqwest/native-tls-vendored"]
-native-tls-alpn = ["reqwest/native-tls-alpn"]
-rustls-tls = ["reqwest/rustls-tls"]
-rustls-tls-manual-roots = ["reqwest/rustls-tls-manual-roots"]
-rustls-tls-webpki-roots = ["reqwest/rustls-tls-webpki-roots"]
-rustls-tls-native-roots = ["reqwest/rustls-tls-native-roots"]
+native-tls-vendored-no-alpn = ["reqwest/native-tls-vendored-no-alpn"]
 blocking = ["reqwest/blocking"]
+charset = ["reqwest/charset"]
 cookies = ["reqwest/cookies"]
 gzip = ["reqwest/gzip"]
 brotli = ["reqwest/brotli"]
-deflate = ["reqwest/deflate"]
 zstd = ["reqwest/zstd"]
-trust-dns = ["reqwest/trust-dns"]
+deflate = ["reqwest/deflate"]
+query = ["reqwest/query"]
+form = ["reqwest/form"]
+json = ["reqwest/json"]
+multipart = ["reqwest/multipart"]
+hickory-dns = ["reqwest/hickory-dns"]
+stream = ["reqwest/stream"]
 socks = ["reqwest/socks"]
-http2 = ["reqwest/http2"]
-charset = ["reqwest/charset"]
-macos-system-configuration = ["reqwest/macos-system-configuration"]
+system-proxy = ["reqwest/system-proxy"]
+http3 = ["reqwest/http3"]
