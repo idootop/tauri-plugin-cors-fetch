@@ -10,7 +10,7 @@ An **unofficial** Tauri plugin that enables **seamless cross-origin (CORS) reque
 ## Features
 
 - **Zero Code Change**: Use standard `fetch()` as you normally would.
-- **Transparent Proxying**: Automatically hooks into the browser's fetch.
+- **Streaming**: Supports response streaming and Server-Sent Events (SSE).
 - **Configurable**: Granular control over which domains bypass CORS.
 - **Multi-platform**: Supports _Windows, macOS, Linux, iOS, and Android_.
 
@@ -83,7 +83,14 @@ window.CORSFetch.config({
   request: {
     connectTimeout: 30 * 1000, // ms
     maxRedirections: 5,
-    proxy: { all: "http://127.0.0.1:7890" },
+    proxy: {
+      all: "http://127.0.0.1:7890",
+    },
+    danger: {
+      acceptInvalidCerts: false,
+      acceptInvalidHostnames: false,
+    },
+    userAgent: navigator.userAgent,
   },
 });
 ```
@@ -96,7 +103,6 @@ window.CORSFetch.config({
 ## Limitations
 
 - **Fetch Only**: Does not support `XMLHttpRequest` (XHR).
-- **No Streaming**: Server-Sent Events (SSE) and response streaming are currently not supported.
 
 ## License
 

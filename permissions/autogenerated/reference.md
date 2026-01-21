@@ -4,8 +4,11 @@ Allows all fetch operations
 
 #### This default permission set includes the following:
 
-- `allow-cors-request`
-- `allow-cancel-cors-request`
+- `allow-fetch`
+- `allow-fetch-cancel`
+- `allow-fetch-send`
+- `allow-fetch-read-body`
+- `allow-fetch-cancel-body`
 
 ## Permission Table
 
@@ -19,25 +22,12 @@ Allows all fetch operations
 <tr>
 <td>
 
-`cors-fetch:allow-cancel-cors-request`
+`cors-fetch:allow-fetch`
 
 </td>
 <td>
 
-Enables the cancel_cors_request command without any pre-configured scope.
-
-</td>
-</tr>
-
-<tr>
-<td>
-
-`cors-fetch:deny-cancel-cors-request`
-
-</td>
-<td>
-
-Denies the cancel_cors_request command without any pre-configured scope.
+Enables the fetch command without any pre-configured scope.
 
 </td>
 </tr>
@@ -45,12 +35,12 @@ Denies the cancel_cors_request command without any pre-configured scope.
 <tr>
 <td>
 
-`cors-fetch:allow-cors-request`
+`cors-fetch:deny-fetch`
 
 </td>
 <td>
 
-Enables the cors_request command without any pre-configured scope.
+Denies the fetch command without any pre-configured scope.
 
 </td>
 </tr>
@@ -58,12 +48,103 @@ Enables the cors_request command without any pre-configured scope.
 <tr>
 <td>
 
-`cors-fetch:deny-cors-request`
+`cors-fetch:allow-fetch-cancel`
 
 </td>
 <td>
 
-Denies the cors_request command without any pre-configured scope.
+Enables the fetch_cancel command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cors-fetch:deny-fetch-cancel`
+
+</td>
+<td>
+
+Denies the fetch_cancel command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cors-fetch:allow-fetch-cancel-body`
+
+</td>
+<td>
+
+Enables the fetch_cancel_body command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cors-fetch:deny-fetch-cancel-body`
+
+</td>
+<td>
+
+Denies the fetch_cancel_body command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cors-fetch:allow-fetch-read-body`
+
+</td>
+<td>
+
+Enables the fetch_read_body command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cors-fetch:deny-fetch-read-body`
+
+</td>
+<td>
+
+Denies the fetch_read_body command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cors-fetch:allow-fetch-send`
+
+</td>
+<td>
+
+Enables the fetch_send command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`cors-fetch:deny-fetch-send`
+
+</td>
+<td>
+
+Denies the fetch_send command without any pre-configured scope.
 
 </td>
 </tr>
