@@ -9,6 +9,7 @@ async function fetchData() {
     greetMsgEl.textContent = JSON.stringify(data, undefined, 4);
   } catch (error) {
     greetMsgEl.textContent = error.toString();
+    console.error(error);
   }
 }
 

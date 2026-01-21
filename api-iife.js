@@ -28,6 +28,154 @@ class CORSFetch {
     };
   }
 
+  async fetchCORS(input, init, force = false) {
+    const urlStr = input instanceof Request ? input.url : String(input);
+
+    if (!force && !this._shouldUseCORSProxy(urlStr)) {
+      return window.fetchNative(input, init);
+    }
+
+    const requestId = this._requestId++;
+
+    const {
+      maxRedirections = this._config.request.maxRedirections,
+      connectTimeout = this._config.request.connectTimeout,
+      proxy = this._config.request.proxy,
+      ...nativeInit
+    } = init || {};
+
+    const tempReq = new Request(input, nativeInit);
+    const buffer = await tempReq.arrayBuffer();
+
+    return new Promise((resolve, reject) => {
+      let controller;
+      let isFinished = false;
+
+      function cleanup(id) {
+        isFinished = true;
+        const internals = window.__TAURI_INTERNALS__;
+
+        if (nativeInit.signal) {
+          nativeInit.signal.removeEventListener("abort", onAbort);
+        }
+
+        if (typeof internals.unregisterCallback === "function") {
+          // tauri >=2.5.1
+          internals.unregisterCallback(id);
+        } else if (window[`_${id}`]) {
+          // tauri < 2.5.1
+          delete window[`_${id}`];
+        }
+      }
+
+      function cancelBackend() {
+        return window.__TAURI_INTERNALS__
+          .invoke("plugin:cors-fetch|cancel_cors_request", { requestId })
+          .catch(console.error);
+      }
+
+      function onAbort() {
+        if (isFinished) return;
+        cancelBackend();
+        const err = "User cancelled the request";
+        controller?.error(err);
+        reject(err);
+        cleanup(handlerId);
+      }
+
+      const stream = new ReadableStream({
+        start(c) {
+          controller = c;
+        },
+        cancel() {
+          onAbort();
+        },
+      });
+
+      if (nativeInit.signal?.aborted) {
+        return reject("User cancelled the request");
+      }
+      nativeInit.signal?.addEventListener("abort", onAbort);
+
+      let expectedIndex = 0;
+      const reorderBuffer = new Map();
+
+      const handlerId = window.__TAURI_INTERNALS__.transformCallback(
+        (event) => {
+          reorderBuffer.set(event.index, event);
+          while (reorderBuffer.has(expectedIndex)) {
+            const e = reorderBuffer.get(expectedIndex);
+            handleEvent(e);
+            reorderBuffer.delete(expectedIndex);
+            expectedIndex++;
+          }
+        },
+      );
+
+      function handleEvent(event) {
+        // finished
+        if (event.end) {
+          controller?.close();
+          cleanup(handlerId);
+          return;
+        }
+
+        const { type, payload } = event.message || event;
+
+        switch (type) {
+          case "Response":
+            resolve(
+              new Response(stream, {
+                status: payload.status,
+                statusText: payload.status_text,
+                headers: payload.headers,
+              }),
+            );
+            break;
+
+          case "Data":
+            if (payload && !isFinished) {
+              controller?.enqueue(new Uint8Array(payload));
+            }
+            break;
+
+          case "Error": {
+            const err = new Error(payload);
+            controller?.error(err);
+            reject(err);
+            cleanup(handlerId);
+            break;
+          }
+
+          case "Done":
+            break;
+        }
+      }
+
+      window.__TAURI_INTERNALS__
+        .invoke("plugin:cors-fetch|cors_request", {
+          request: {
+            requestId,
+            method: tempReq.method,
+            url: urlStr,
+            headers: Array.from(tempReq.headers.entries()),
+            data: buffer.byteLength ? Array.from(new Uint8Array(buffer)) : null,
+            maxRedirections,
+            connectTimeout,
+            proxy,
+          },
+          onEvent: window.__TAURI_INTERNALS__.unregisterCallback
+            ? `__CHANNEL__:${handlerId}` // tauri >= 2.5.1
+            : { __TAURI_CHANNEL_MARKER__: true, id: handlerId }, // tauri < 2.5.1
+        })
+        .catch((err) => {
+          if (isFinished) return;
+          cleanup(handlerId);
+          reject(err);
+        });
+    });
+  }
+
   _matchesPattern(url, patterns) {
     if (!patterns || patterns.length === 0) return false;
     return patterns.some((pattern) => {
@@ -59,91 +207,6 @@ class CORSFetch {
 
     // Default: proxy all http(s) requests
     return /^https?:\/\//i.test(url);
-  }
-
-  async fetchCORS(input, init, force = false) {
-    const urlStr = input instanceof Request ? input.url : String(input);
-
-    if (!force && !this._shouldUseCORSProxy(urlStr)) {
-      return window.fetchNative(input, init);
-    }
-
-    const {
-      maxRedirections = this._config.request.maxRedirections,
-      connectTimeout = this._config.request.connectTimeout,
-      proxy = this._config.request.proxy,
-      ...nativeInit
-    } = init || {};
-
-    const requestId = this._requestId++;
-    const { signal } = nativeInit;
-
-    // Handle request cancellation logic
-    if (signal) {
-      signal.addEventListener("abort", () => {
-        this._invoke("plugin:cors-fetch|cancel_cors_request", {
-          requestId,
-        }).catch(() => {});
-      });
-    }
-
-    // Create a temporary Request object using nativeInit.
-    // This automatically handles Header merging and Body conversion
-    // without affecting the state of the original 'input' object.
-    const tempReq = new Request(input, nativeInit);
-    const method = tempReq.method;
-    const headers = Array.from(tempReq.headers.entries());
-
-    // Read Body data
-    const buffer = await tempReq.arrayBuffer();
-    const reqData = buffer.byteLength
-      ? Array.from(new Uint8Array(buffer))
-      : null;
-
-    // Invoke Tauri plugin
-    const response = await this._invoke("plugin:cors-fetch|cors_request", {
-      request: {
-        requestId,
-        method,
-        url: urlStr,
-        headers,
-        data: reqData,
-        maxRedirections,
-        connectTimeout,
-        proxy,
-      },
-    });
-
-    const {
-      status,
-      statusText,
-      url: resUrl,
-      body,
-      headers: resHeaders,
-    } = response;
-
-    // Assemble the Response
-    const responseBody =
-      body instanceof ArrayBuffer
-        ? body
-        : Array.isArray(body)
-          ? new Uint8Array(body)
-          : null;
-
-    const res = new Response(responseBody, {
-      headers: resHeaders,
-      status,
-      statusText,
-    });
-
-    // Correct the Response 'url' property (readonly, so we use defineProperty)
-    Object.defineProperty(res, "url", { value: resUrl });
-
-    return res;
-  }
-
-  async _invoke(cmd, args) {
-    return window.__TAURI_INTERNALS__.invoke(cmd, args);
   }
 }
 

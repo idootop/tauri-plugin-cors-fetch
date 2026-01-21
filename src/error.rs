@@ -20,7 +20,6 @@ pub enum Error {
     HttpInvalidHeaderValue(#[from] http::header::InvalidHeaderValue),
     #[error(transparent)]
     UrlParseError(#[from] url::ParseError),
-    /// HTTP method error.
     #[error(transparent)]
     HttpMethod(#[from] http::method::InvalidMethod),
     #[error("scheme {0} not supported")]
