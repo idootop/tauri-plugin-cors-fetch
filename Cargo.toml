@@ -31,15 +31,18 @@ thiserror = "2"
 url = "2"
 http = "1"
 reqwest = { version = "0.13", default-features = false }
-tokio = { version = "1", features = ["full"] }
-dashmap = "6"
-futures-util = "0.3"
+tokio = { version = "1", features = ["sync", "macros"] }
+data-url = "0.3"
+cookie_store = { version = "0.22", optional = true, features = ["serde"] }
+bytes = { version = "1", optional = true }
+tracing = { version = "0.1", optional = true }
 
 [build-dependencies]
 tauri-plugin = { version = "2", features = ["build"] }
 
 [features]
-default = ["reqwest/default", "stream"]
+default = ["reqwest/default", "cookies"]
+tracing = ["dep:tracing"]
 
 # Proxy for reqwest's core network features
 http2 = ["reqwest/http2"]
@@ -51,7 +54,7 @@ native-tls-vendored = ["reqwest/native-tls-vendored"]
 native-tls-vendored-no-alpn = ["reqwest/native-tls-vendored-no-alpn"]
 blocking = ["reqwest/blocking"]
 charset = ["reqwest/charset"]
-cookies = ["reqwest/cookies"]
+cookies = ["reqwest/cookies", "dep:cookie_store", "dep:bytes"]
 gzip = ["reqwest/gzip"]
 brotli = ["reqwest/brotli"]
 zstd = ["reqwest/zstd"]

@@ -1,5 +1,10 @@
 class CORSFetch {
-  _requestId = 1;
+  constructor() {
+    window.fetchNative = window.fetch.bind(window);
+    window.fetch = this.fetchCORS.bind(this);
+    window.fetchCORS = (input, init) => this.fetchCORS(input, init, true);
+  }
+
   _config = {
     include: [],
     exclude: [],
@@ -7,25 +12,16 @@ class CORSFetch {
       proxy: undefined,
       connectTimeout: undefined,
       maxRedirections: undefined,
+      userAgent: navigator.userAgent,
+      danger: {
+        acceptInvalidCerts: false,
+        acceptInvalidHostnames: false,
+      },
     },
   };
 
-  constructor() {
-    window.fetchNative = window.fetch.bind(window);
-    window.fetch = this.fetchCORS.bind(this);
-    window.fetchCORS = (input, init) => this.fetchCORS(input, init, true);
-  }
-
-  config(config) {
-    this._config = {
-      ...this._config,
-      include: config.include || this._config.include,
-      exclude: config.exclude || this._config.exclude,
-      request: {
-        ...this._config.request,
-        ...config.request,
-      },
-    };
+  config(newConfig) {
+    this._config = this._deepMerge(this._config, newConfig);
   }
 
   async fetchCORS(input, init, force = false) {
@@ -35,145 +31,136 @@ class CORSFetch {
       return window.fetchNative(input, init);
     }
 
-    const requestId = this._requestId++;
+    const signal = init?.signal;
+    if (signal?.aborted) throw this._cancel_error;
+
+    let rid = null;
+    let responseRid = null;
+    let isFinished = false;
+
+    const cleanup = (_reason) => {
+      if (isFinished) return;
+      isFinished = true;
+
+      signal?.removeEventListener("abort", onAbort);
+
+      if (responseRid !== null) {
+        this.invoke("plugin:cors-fetch|fetch_cancel_body", {
+          rid: responseRid,
+        }).catch(() => {});
+      }
+
+      if (rid !== null) {
+        this.invoke("plugin:cors-fetch|fetch_cancel", { rid }).catch(() => {});
+      }
+    };
+
+    const onAbort = () => cleanup("abort");
+    signal?.addEventListener("abort", onAbort);
 
     const {
       maxRedirections = this._config.request.maxRedirections,
       connectTimeout = this._config.request.connectTimeout,
       proxy = this._config.request.proxy,
+      danger = this._config.request.danger,
+      userAgent = this._config.request.userAgent,
       ...nativeInit
     } = init || {};
 
-    const tempReq = new Request(input, nativeInit);
-    const buffer = await tempReq.arrayBuffer();
+    const req = new Request(input, nativeInit);
+    const buffer = await req.arrayBuffer();
 
-    return new Promise((resolve, reject) => {
-      let controller;
-      let isFinished = false;
+    if (signal?.aborted) throw this._cancel_error;
 
-      function cleanup(id) {
-        isFinished = true;
-        const internals = window.__TAURI_INTERNALS__;
-
-        if (nativeInit.signal) {
-          nativeInit.signal.removeEventListener("abort", onAbort);
-        }
-
-        if (typeof internals.unregisterCallback === "function") {
-          // tauri >=2.5.1
-          internals.unregisterCallback(id);
-        } else if (window[`_${id}`]) {
-          // tauri < 2.5.1
-          delete window[`_${id}`];
-        }
-      }
-
-      function cancelBackend() {
-        return window.__TAURI_INTERNALS__
-          .invoke("plugin:cors-fetch|cancel_cors_request", { requestId })
-          .catch(console.error);
-      }
-
-      function onAbort() {
-        if (isFinished) return;
-        cancelBackend();
-        const err = "User cancelled the request";
-        controller?.error(err);
-        reject(err);
-        cleanup(handlerId);
-      }
-
-      const stream = new ReadableStream({
-        start(c) {
-          controller = c;
-        },
-        cancel() {
-          onAbort();
+    try {
+      rid = await this.invoke("plugin:cors-fetch|fetch", {
+        clientConfig: {
+          method: req.method,
+          url: urlStr,
+          headers: Array.from(req.headers.entries()),
+          data: buffer.byteLength ? Array.from(new Uint8Array(buffer)) : null,
+          maxRedirections,
+          connectTimeout,
+          proxy,
+          danger,
+          userAgent,
         },
       });
 
-      if (nativeInit.signal?.aborted) {
-        return reject("User cancelled the request");
-      }
-      nativeInit.signal?.addEventListener("abort", onAbort);
+      if (signal?.aborted) throw this._cancel_error;
 
-      let expectedIndex = 0;
-      const reorderBuffer = new Map();
+      const {
+        status,
+        statusText,
+        url,
+        headers: responseHeaders,
+        rid: _rid,
+      } = await this.invoke("plugin:cors-fetch|fetch_send", {
+        rid,
+      });
+      responseRid = _rid;
 
-      const handlerId = window.__TAURI_INTERNALS__.transformCallback(
-        (event) => {
-          reorderBuffer.set(event.index, event);
-          while (reorderBuffer.has(expectedIndex)) {
-            const e = reorderBuffer.get(expectedIndex);
-            handleEvent(e);
-            reorderBuffer.delete(expectedIndex);
-            expectedIndex++;
-          }
-        },
-      );
+      if (signal?.aborted) throw this._cancel_error;
 
-      function handleEvent(event) {
-        // finished
-        if (event.end) {
-          controller?.close();
-          cleanup(handlerId);
+      const readChunk = async (controller) => {
+        if (signal?.aborted) {
+          controller.error(this._cancel_error);
           return;
         }
 
-        const { type, payload } = event.message || event;
+        try {
+          const data = await this.invoke("plugin:cors-fetch|fetch_read_body", {
+            rid: responseRid,
+          });
+          const dataUint8 = new Uint8Array(data);
+          const lastByte = dataUint8[dataUint8.byteLength - 1];
+          const actualData = dataUint8.slice(0, dataUint8.byteLength - 1);
 
-        switch (type) {
-          case "Response":
-            resolve(
-              new Response(stream, {
-                status: payload.status,
-                statusText: payload.status_text,
-                headers: payload.headers,
-              }),
-            );
-            break;
-
-          case "Data":
-            if (payload && !isFinished) {
-              controller?.enqueue(new Uint8Array(payload));
-            }
-            break;
-
-          case "Error": {
-            const err = new Error(payload);
-            controller?.error(err);
-            reject(err);
-            cleanup(handlerId);
-            break;
+          // close when the signal to close (last byte is 1) is sent from the IPC.
+          if (lastByte === 1) {
+            controller.close();
+            return;
           }
 
-          case "Done":
-            break;
+          controller.enqueue(actualData);
+        } catch (e) {
+          controller.error(e);
+          cleanup();
         }
-      }
+      };
 
-      window.__TAURI_INTERNALS__
-        .invoke("plugin:cors-fetch|cors_request", {
-          request: {
-            requestId,
-            method: tempReq.method,
-            url: urlStr,
-            headers: Array.from(tempReq.headers.entries()),
-            data: buffer.byteLength ? Array.from(new Uint8Array(buffer)) : null,
-            maxRedirections,
-            connectTimeout,
-            proxy,
-          },
-          onEvent: window.__TAURI_INTERNALS__.unregisterCallback
-            ? `__CHANNEL__:${handlerId}` // tauri >= 2.5.1
-            : { __TAURI_CHANNEL_MARKER__: true, id: handlerId }, // tauri < 2.5.1
-        })
-        .catch((err) => {
-          if (isFinished) return;
-          cleanup(handlerId);
-          reject(err);
-        });
-    });
+      // no body for 101, 103, 204, 205 and 304
+      // see https://fetch.spec.whatwg.org/#null-body-status
+      const body = [101, 103, 204, 205, 304].includes(status)
+        ? null
+        : new ReadableStream({ pull: readChunk, cancel: onAbort });
+
+      const res = new Response(body, {
+        status,
+        statusText,
+      });
+
+      // Set `Response` properties that are ignored by the
+      // constructor, like url and some headers
+      //
+      // Since url and headers are read only properties
+      // this is the only way to set them.
+      Object.defineProperty(res, "url", { value: url });
+      Object.defineProperty(res, "headers", {
+        value: new Headers(responseHeaders),
+      });
+
+      return res;
+    } catch (err) {
+      cleanup();
+      throw err;
+    }
+  }
+
+  _cancel_error = "User cancelled the request";
+
+  get invoke() {
+    return window.__TAURI_INTERNALS__.invoke;
   }
 
   _matchesPattern(url, patterns) {
@@ -207,6 +194,27 @@ class CORSFetch {
 
     // Default: proxy all http(s) requests
     return /^https?:\/\//i.test(url);
+  }
+
+  _deepMerge(target, source) {
+    const isObject = (item) => {
+      return item && typeof item === "object" && !Array.isArray(item);
+    };
+    const output = { ...target };
+    if (isObject(target) && isObject(source)) {
+      Object.keys(source).forEach((key) => {
+        if (isObject(source[key])) {
+          if (!(key in target)) {
+            Object.assign(output, { [key]: source[key] });
+          } else {
+            output[key] = deepMerge(target[key], source[key]);
+          }
+        } else {
+          Object.assign(output, { [key]: source[key] });
+        }
+      });
+    }
+    return output;
   }
 }
 
