@@ -1,66 +1,133 @@
-// Copyright 2019-2023 Tauri Programme within The Commons Conservancy
-// SPDX-License-Identifier: Apache-2.0
-// SPDX-License-Identifier: MIT
-
-// Source: tauri-plugin-http@2.0.0-beta.3
-
-use std::{collections::HashMap, sync::Arc, time::Duration};
-
+use dashmap::DashMap;
+use futures_util::StreamExt;
 use http::{header, HeaderName, HeaderValue, Method};
 use reqwest::{redirect::Policy, NoProxy, RequestBuilder};
 use serde::{Deserialize, Serialize};
-use tauri::command;
+use std::{collections::HashMap, sync::Arc, time::Duration};
+use tauri::{command, ipc::Channel, Runtime, State};
+use tokio::sync::oneshot;
 
-use crate::{Error, Result};
+use crate::Result;
+
+pub struct RequestPool(pub Arc<DashMap<u64, oneshot::Sender<()>>>);
+
+impl Default for RequestPool {
+    fn default() -> Self {
+        Self(Arc::new(DashMap::new()))
+    }
+}
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RequestConfig {
-    request_id: u64,
-    method: String,
-    url: url::Url,
-    headers: Vec<(String, String)>,
-    data: Option<Vec<u8>>,
-    connect_timeout: Option<u64>,
-    max_redirections: Option<usize>,
-    proxy: Option<Proxy>,
+    pub request_id: u64,
+    pub method: String,
+    pub url: url::Url,
+    pub headers: Vec<(String, String)>,
+    pub data: Option<Vec<u8>>,
+    pub connect_timeout: Option<u64>,
+    pub max_redirections: Option<usize>,
+    pub proxy: Option<Proxy>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct FetchResponse {
-    status: u16,
-    status_text: String,
-    headers: Vec<(String, String)>,
-    url: String,
-    body: Option<Vec<u8>>,
+    pub status: u16,
+    pub status_text: String,
+    pub headers: Vec<(String, String)>,
+    pub url: String,
 }
 
-use once_cell::sync::Lazy;
-use tokio::sync::oneshot;
-type RequestPool = Arc<std::sync::Mutex<HashMap<u64, oneshot::Sender<()>>>>;
-static REQUEST_POOL: Lazy<RequestPool> =
-    Lazy::new(|| Arc::new(std::sync::Mutex::new(HashMap::new())));
+#[derive(Serialize, Clone)]
+#[serde(tag = "type", content = "payload")]
+pub enum StreamPayload {
+    Response(FetchResponse),
+    Data(Vec<u8>),
+    Error(String),
+    Done,
+}
 
 #[command]
-pub fn cancel_cors_request(request_id: u64) {
-    if let Some(tx) = REQUEST_POOL.lock().unwrap().remove(&request_id) {
-        tx.send(()).ok();
+pub async fn cancel_cors_request(request_id: u64, pool: State<'_, RequestPool>) -> Result<()> {
+    if let Some((_, tx)) = pool.0.remove(&request_id) {
+        let _ = tx.send(());
     }
+    Ok(())
 }
 
 #[command]
-pub async fn cors_request(request: RequestConfig) -> Result<FetchResponse> {
+pub async fn cors_request<R: Runtime>(
+    _app: tauri::AppHandle<R>,
+    request: RequestConfig,
+    on_event: Channel<StreamPayload>,
+    pool: State<'_, RequestPool>,
+) -> Result<()> {
     let request_id = request.request_id;
-    let (tx, rx) = oneshot::channel();
-    REQUEST_POOL.lock().unwrap().insert(request_id, tx);
-    let request_config = build_request(request)?;
-    let response = get_response(request_config, rx).await;
-    if !REQUEST_POOL.lock().unwrap().contains_key(&request_id) {
-        return Err(Error::RequestCanceled);
-    }
-    REQUEST_POOL.lock().unwrap().remove(&request_id);
-    response
+    let (cancel_tx, mut cancel_rx) = oneshot::channel();
+
+    pool.0.insert(request_id, cancel_tx);
+
+    let builder = build_request(request)?;
+
+    let pool_inner = pool.0.clone();
+
+    tokio::spawn(async move {
+        match builder.send().await {
+            Ok(response) => {
+                let status = response.status();
+                let url = response.url().to_string();
+                let headers = response
+                    .headers()
+                    .iter()
+                    .map(|(k, v)| {
+                        (
+                            k.as_str().to_string(),
+                            String::from_utf8_lossy(v.as_bytes()).to_string(),
+                        )
+                    })
+                    .collect();
+
+                let _ = on_event.send(StreamPayload::Response(FetchResponse {
+                    status: status.as_u16(),
+                    status_text: status.canonical_reason().unwrap_or_default().to_string(),
+                    headers,
+                    url,
+                }));
+
+                let mut stream = response.bytes_stream();
+                loop {
+                    tokio::select! {
+                        _ = &mut cancel_rx => {
+                            let _ = on_event.send(StreamPayload::Error("User cancelled the request".into()));
+                            break;
+                        }
+                        chunk_opt = stream.next() => {
+                            match chunk_opt {
+                                Some(Ok(chunk)) => {
+                                    let _ = on_event.send(StreamPayload::Data(chunk.to_vec()));
+                                }
+                                Some(Err(e)) => {
+                                    let _ = on_event.send(StreamPayload::Error(e.to_string()));
+                                    break;
+                                }
+                                None => {
+                                    let _ = on_event.send(StreamPayload::Done);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                let _ = on_event.send(StreamPayload::Error(e.to_string()));
+            }
+        }
+        pool_inner.remove(&request_id);
+    });
+
+    Ok(())
 }
 
 pub fn build_request(request_config: RequestConfig) -> Result<RequestBuilder> {
@@ -124,41 +191,6 @@ pub fn build_request(request_config: RequestConfig) -> Result<RequestBuilder> {
     }
 
     Ok(request)
-}
-
-pub async fn get_response(
-    request: RequestBuilder,
-    rx: oneshot::Receiver<()>,
-) -> Result<FetchResponse> {
-    let response_or_none = tokio::select! {
-        _ = rx =>None,
-        res = request.send() => Some(res),
-    };
-
-    if let Some(response) = response_or_none {
-        match response {
-            Ok(res) => {
-                let status = res.status();
-                let url = res.url().to_string();
-                let mut headers = Vec::new();
-                for (key, val) in res.headers().iter() {
-                    headers.push((
-                        key.as_str().into(),
-                        String::from_utf8(val.as_bytes().to_vec())?,
-                    ));
-                }
-                return Ok(FetchResponse {
-                    status: status.as_u16(),
-                    status_text: status.canonical_reason().unwrap_or_default().to_string(),
-                    headers,
-                    url,
-                    body: Some(res.bytes().await?.to_vec()),
-                });
-            }
-            Err(err) => return Err(Error::Network(err)),
-        }
-    }
-    Err(Error::RequestCanceled)
 }
 
 #[derive(Deserialize)]
